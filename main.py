@@ -6,6 +6,9 @@ import Preprocess
 from flask import Flask, request, jsonify
 import base64
 from flask_cors import CORS
+import time
+import requests
+import threading
 
 app = Flask(__name__)
 CORS(app)
@@ -56,16 +59,6 @@ def showImage(name, image):
 
         # Đóng tất cả cửa sổ
         cv2.destroyAllWindows()
-
-
-@app.route("/show/<status>", methods=["GET"])
-def updateShow(status):
-    global show  # Để có thể cập nhật biến toàn cục
-    if status == 1:
-        show = True
-    elif status == 0:
-        show = False
-    return f"Show updated to {show}", 200
 
 
 @app.route("/read-text", methods=["POST"])
@@ -265,6 +258,44 @@ def read_text():
     # hoàn thành đọc biển số
     return response(True, plate, None), 200
 
+
+@app.route("/show/<status>", methods=["GET"])
+def updateShow(status):
+    global show  # Để có thể cập nhật biến toàn cục
+    if status == 1:
+        show = True
+    elif status == 0:
+        show = False
+    return f"Show updated to {show}", 200
+
+
+@app.route("/hello", methods=["GET"])
+def hello():
+    return "hello", 200
+
+
+load = True
+
+
+def call_api():
+    while load:
+        try:
+            # Gửi request GET tới API
+            response = requests.get("https://ttnt-read-plate.onrender.com")
+            if response.status_code == 200:
+                print("API call successful:", response)  # Xử lý dữ liệu trả về
+            else:
+                print(f"Failed to call API. Status code: {response.status_code}")
+        except Exception as e:
+            print(f"Error occurred: {e}")
+
+        time.sleep(300)
+
+
+api_thread = threading.Thread(target=call_api)
+
+# Bắt đầu luồng
+api_thread.start()
 
 if __name__ == "__main__":
     app.run()
