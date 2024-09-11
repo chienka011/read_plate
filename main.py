@@ -279,6 +279,7 @@ load = True
 
 def call_api():
     while load:
+        time.sleep(240)
         try:
             # Gửi request GET tới API
             response = requests.get("https://ttnt-read-plate.onrender.com/hello")
@@ -288,8 +289,6 @@ def call_api():
                 print(f"Failed to call API. Status code: {response.status_code}")
         except Exception as e:
             print(f"Error occurred: {e}")
-
-        time.sleep(240)
 
 
 api_thread = threading.Thread(target=call_api)
