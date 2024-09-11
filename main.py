@@ -281,7 +281,7 @@ def call_api():
     while load:
         try:
             # Gửi request GET tới API
-            response = requests.get("https://ttnt-read-plate.onrender.com")
+            response = requests.get("https://ttnt-read-plate.onrender.com/hello")
             if response.status_code == 200:
                 print("API call successful:", response)  # Xử lý dữ liệu trả về
             else:
@@ -289,7 +289,7 @@ def call_api():
         except Exception as e:
             print(f"Error occurred: {e}")
 
-        time.sleep(300)
+        time.sleep(240)
 
 
 api_thread = threading.Thread(target=call_api)
