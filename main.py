@@ -61,6 +61,56 @@ def showImage(name, image):
         cv2.destroyAllWindows()
 
 
+def reTraining():
+    global kNearest
+    npaClassifications = np.loadtxt(
+        current_directory + "/training/classifications.txt", np.float32
+    )
+    npaFlattenedImages = np.loadtxt(
+        current_directory + "/training/flattened_images.txt", np.float32
+    )
+    npaClassifications = npaClassifications.reshape(
+        (npaClassifications.size, 1)
+    )  # reshape numpy array to 1d, necessary to pass to call to train
+    kNearest = cv2.ml.KNearest_create()  # instantiate KNN object
+    kNearest.train(npaFlattenedImages, cv2.ml.ROW_SAMPLE, npaClassifications)
+
+
+learn = True
+
+
+def train(images):
+    print("Training")
+    for idx, image in enumerate(images):
+        cv2.imshow(f"Reshaped Image", image)
+        key = cv2.waitKey(0)
+        if key != 45:
+            vector_str = " ".join([f"{x:.18e}" for x in image.flatten()])
+            # char = input("Nhập vào một ký tự: ")
+            # ascii_value = ord(char)
+
+            # Định dạng số thực theo kiểu khoa học
+            formatted_value = f"{key:.18e}"
+            with open(
+                current_directory + "/training/classifications.txt",
+                "a",
+                encoding="utf8",
+            ) as f:
+                f.writelines(formatted_value + "\n")
+                f.close()
+
+            with open(
+                current_directory + "/training/flattened_images.txt",
+                "a",
+                encoding="utf8",
+            ) as f:
+                f.writelines(vector_str + "\n")
+                f.close()
+    cv2.destroyAllWindows()
+    if len(images) > 0:
+        reTraining()
+
+
 @app.route("/read-text", methods=["POST"])
 def read_text():
     data = request.get_json()
@@ -201,7 +251,7 @@ def read_text():
         char_x = sorted(char_x)
         first_line = ""
         second_line = ""
-
+        images = []
         for i in char_x:
             # kích thước ký tự
             (x, y, w, h) = cv2.boundingRect(cont[char_x_ind[i]])
@@ -220,6 +270,12 @@ def read_text():
             )
             showImage("npaROIResized", npaROIResized)
 
+            if learn is True:
+                char_image = npaROIResized.reshape(
+                    (RESIZED_IMAGE_HEIGHT, RESIZED_IMAGE_WIDTH)
+                )
+                images.append(char_image)
+
             # chuyển sang dạng float
             npaROIResized = np.float32(npaROIResized)
 
@@ -234,6 +290,8 @@ def read_text():
                 first_line = (first_line + strCurrentChar).replace(".", "")
             else:
                 second_line = (second_line + strCurrentChar).replace(".", "")
+
+        train(images)
 
         # độ dài ký tự đọc được
         lengthPlate = len(first_line) + len(second_line)
@@ -259,6 +317,11 @@ def read_text():
     return response(True, plate, None), 200
 
 
+@app.route("/hello", methods=["GET"])
+def hello():
+    return "hello", 200
+
+
 @app.route("/show/<status>", methods=["GET"])
 def updateShow(status):
     global show  # Để có thể cập nhật biến toàn cục
@@ -267,11 +330,6 @@ def updateShow(status):
     elif status == 0:
         show = False
     return f"Show updated to {show}", 200
-
-
-@app.route("/hello", methods=["GET"])
-def hello():
-    return "hello", 200
 
 
 load = True
@@ -294,7 +352,7 @@ def call_api():
 api_thread = threading.Thread(target=call_api)
 
 # Bắt đầu luồng
-api_thread.start()
+# api_thread.start()
 
 if __name__ == "__main__":
     app.run()
