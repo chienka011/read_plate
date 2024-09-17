@@ -76,10 +76,12 @@ def reTraining():
     kNearest.train(npaFlattenedImages, cv2.ml.ROW_SAMPLE, npaClassifications)
 
 
-learn = True
+learn = False
 
 
 def train(images):
+    if learn is False:
+        return
     print("Training")
     for idx, image in enumerate(images):
         cv2.imshow(f"Reshaped Image", image)
